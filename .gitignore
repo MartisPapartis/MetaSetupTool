@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs and local data
+*.log
+pylint_output.txt
+sorted.txt
+
+# Claude
+.claude/
+CLAUDE.md
+notes/
+
+# OS
+.DS_Store
+Thumbs.db

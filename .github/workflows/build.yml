@@ -1,0 +1,89 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"          # triggers on v1.0.0, v1.2.3, etc.
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: MetaSetupTool-windows
+            exe_path: dist/MetaSetupTool.exe
+          - os: macos-latest
+            artifact_name: MetaSetupTool-mac
+            exe_path: dist/MetaSetupTool
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        run: >
+          pyinstaller
+          --onefile
+          --windowed
+          --name MetaSetupTool
+          --add-data "Import template.xlsx;."
+          main.py
+
+      - name: Build with PyInstaller (macOS)
+        if: runner.os == 'macOS'
+        run: >
+          pyinstaller
+          --onefile
+          --windowed
+          --name MetaSetupTool
+          --add-data "Import template.xlsx:."
+          main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.exe_path }}
+          retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # only create a release when triggered by a tag push
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Zip artifacts
+        run: |
+          cd artifacts
+          zip -r MetaSetupTool-windows.zip MetaSetupTool-windows/
+          zip -r MetaSetupTool-mac.zip MetaSetupTool-mac/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/MetaSetupTool-windows.zip
+            artifacts/MetaSetupTool-mac.zip
+          generate_release_notes: true

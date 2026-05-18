@@ -65,6 +65,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     # only create a release when triggered by a tag push
     if: startsWith(github.ref, 'refs/tags/')
 
